@@ -30,7 +30,7 @@ var golden = []Golden{
 	{"prime", prime_in, prime_out},
 }
 
-var goldenJSON = []Golden {
+var goldenJSON = []Golden{
 	{"prime", prime_json_in, prime_json_out},
 }
 
@@ -62,16 +62,16 @@ func (i Day) String() string {
 }
 
 var _DayNameToValue_map = map[string]Day{
-	_Day_name[0:6]:   0,
-	_Day_name[6:13]:  1,
-	_Day_name[13:22]: 2,
-	_Day_name[22:30]: 3,
-	_Day_name[30:36]: 4,
-	_Day_name[36:44]: 5,
-	_Day_name[44:50]: 6,
+	"Monday":    Monday,
+	"Tuesday":   Tuesday,
+	"Wednesday": Wednesday,
+	"Thursday":  Thursday,
+	"Friday":    Friday,
+	"Saturday":  Saturday,
+	"Sunday":    Sunday,
 }
 
-func DayString(s string) (Day, error) {
+func Day_Parse(s string) (Day, error) {
 	if val, ok := _DayNameToValue_map[s]; ok {
 		return val, nil
 	}
@@ -105,12 +105,12 @@ func (i Number) String() string {
 }
 
 var _NumberNameToValue_map = map[string]Number{
-	_Number_name[0:3]:  1,
-	_Number_name[3:6]:  2,
-	_Number_name[6:11]: 3,
+	"One":   One,
+	"Two":   Two,
+	"Three": Three,
 }
 
-func NumberString(s string) (Number, error) {
+func Number_Parse(s string) (Number, error) {
 	if val, ok := _NumberNameToValue_map[s]; ok {
 		return val, nil
 	}
@@ -161,17 +161,17 @@ func (i Gap) String() string {
 }
 
 var _GapNameToValue_map = map[string]Gap{
-	_Gap_name_0[0:3]:   2,
-	_Gap_name_0[3:8]:   3,
-	_Gap_name_1[0:4]:   5,
-	_Gap_name_1[4:7]:   6,
-	_Gap_name_1[7:12]:  7,
-	_Gap_name_1[12:17]: 8,
-	_Gap_name_1[17:21]: 9,
-	_Gap_name_2[0:6]:   11,
+	"Two":    Two,
+	"Three":  Three,
+	"Five":   Five,
+	"Six":    Six,
+	"Seven":  Seven,
+	"Eight":  Eight,
+	"Nine":   Nine,
+	"Eleven": Eleven,
 }
 
-func GapString(s string) (Gap, error) {
+func Gap_Parse(s string) (Gap, error) {
 	if val, ok := _GapNameToValue_map[s]; ok {
 		return val, nil
 	}
@@ -204,14 +204,14 @@ func (i Num) String() string {
 }
 
 var _NumNameToValue_map = map[string]Num{
-	_Num_name[0:3]:   -2,
-	_Num_name[3:6]:   -1,
-	_Num_name[6:8]:   0,
-	_Num_name[8:10]:  1,
-	_Num_name[10:12]: 2,
+	"m_2": m_2,
+	"m_1": m_1,
+	"m0":  m0,
+	"m1":  m1,
+	"m2":  m2,
 }
 
-func NumString(s string) (Num, error) {
+func Num_Parse(s string) (Num, error) {
 	if val, ok := _NumNameToValue_map[s]; ok {
 		return val, nil
 	}
@@ -257,14 +257,14 @@ func (i Unum) String() string {
 }
 
 var _UnumNameToValue_map = map[string]Unum{
-	_Unum_name_0[0:2]: 0,
-	_Unum_name_0[2:4]: 1,
-	_Unum_name_0[4:6]: 2,
-	_Unum_name_1[0:3]: 253,
-	_Unum_name_1[3:6]: 254,
+	"m0":  m0,
+	"m1":  m1,
+	"m2":  m2,
+	"m_2": m_2,
+	"m_1": m_1,
 }
 
-func UnumString(s string) (Unum, error) {
+func Unum_Parse(s string) (Unum, error) {
 	if val, ok := _UnumNameToValue_map[s]; ok {
 		return val, nil
 	}
@@ -320,22 +320,22 @@ func (i Prime) String() string {
 }
 
 var _PrimeNameToValue_map = map[string]Prime{
-	_Prime_name[0:2]:   2,
-	_Prime_name[2:4]:   3,
-	_Prime_name[4:6]:   5,
-	_Prime_name[6:8]:   7,
-	_Prime_name[8:11]:  11,
-	_Prime_name[11:14]: 13,
-	_Prime_name[14:17]: 17,
-	_Prime_name[17:20]: 19,
-	_Prime_name[20:23]: 23,
-	_Prime_name[23:26]: 29,
-	_Prime_name[26:29]: 31,
-	_Prime_name[29:32]: 41,
-	_Prime_name[32:35]: 43,
+	"p2":  p2,
+	"p3":  p3,
+	"p5":  p5,
+	"p7":  p7,
+	"p11": p11,
+	"p13": p13,
+	"p17": p17,
+	"p19": p19,
+	"p23": p23,
+	"p29": p29,
+	"p37": p37,
+	"p41": p41,
+	"p43": p43,
 }
 
-func PrimeString(s string) (Prime, error) {
+func Prime_Parse(s string) (Prime, error) {
 	if val, ok := _PrimeNameToValue_map[s]; ok {
 		return val, nil
 	}
@@ -388,41 +388,39 @@ func (i Prime) String() string {
 }
 
 var _PrimeNameToValue_map = map[string]Prime{
-	_Prime_name[0:2]:   2,
-	_Prime_name[2:4]:   3,
-	_Prime_name[4:6]:   5,
-	_Prime_name[6:8]:   7,
-	_Prime_name[8:11]:  11,
-	_Prime_name[11:14]: 13,
-	_Prime_name[14:17]: 17,
-	_Prime_name[17:20]: 19,
-	_Prime_name[20:23]: 23,
-	_Prime_name[23:26]: 29,
-	_Prime_name[26:29]: 31,
-	_Prime_name[29:32]: 41,
-	_Prime_name[32:35]: 43,
+	"p2":  p2,
+	"p3":  p3,
+	"p5":  p5,
+	"p7":  p7,
+	"p11": p11,
+	"p13": p13,
+	"p17": p17,
+	"p19": p19,
+	"p23": p23,
+	"p29": p29,
+	"p37": p37,
+	"p41": p41,
+	"p43": p43,
 }
 
-func PrimeString(s string) (Prime, error) {
+func Prime_Parse(s string) (Prime, error) {
 	if val, ok := _PrimeNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to Prime values", s)
 }
 
-func (i Prime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(i.String())
+func (i Prime) MarshalText() ([]byte, error) {
+	return []byte(i.String()), nil
 }
 
-func (i *Prime) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("Prime should be a string, got %s", data)
+func (i *Prime) UnmarshalText(data []byte) error {
+	val, err := Prime_Parse(string(data))
+	if err != nil {
+		return err
 	}
-
-	var err error
-	*i, err = PrimeString(s)
-	return err
+	*i = val
+	return nil
 }
 `
 

@@ -30,7 +30,6 @@ func TestEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
 	// Create stringer in temporary directory.
 	stringer := filepath.Join(dir, "stringer.exe")
 	err = run("go", "build", "-o", stringer, "enumer.go", "stringer.go")
@@ -61,6 +60,8 @@ func TestEndToEnd(t *testing.T) {
 		typeName := fmt.Sprintf("%c%s", name[0]+'A'-'a', name[1:len(name)-len(".go")])
 		stringerCompileAndRun(t, dir, stringer, typeName, name)
 	}
+	// Remove on successful completion.  On failures, leave the temp dir.
+	os.RemoveAll(dir)
 }
 
 // stringerCompileAndRun runs stringer for the named file and compiles and
@@ -72,7 +73,7 @@ func stringerCompileAndRun(t *testing.T, dir, stringer, typeName, fileName strin
 	if err != nil {
 		t.Fatalf("copying file to temporary directory: %s", err)
 	}
-	stringSource := filepath.Join(dir, typeName+"_string.go")
+	stringSource := filepath.Join(dir, "enumer_"+typeName+".go")
 	// Run stringer in temporary directory.
 	err = run(stringer, "-type", typeName, "-output", stringSource, source)
 	if err != nil {

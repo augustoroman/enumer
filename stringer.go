@@ -2,16 +2,21 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Stringer is a tool to automate the creation of methods that satisfy the fmt.Stringer
-// interface. Given the name of a (signed or unsigned) integer type T that has constants
-// defined, stringer will create a new self-contained Go source file implementing
+// Enumer is a tool to automate the creation of methods that satisfy the
+// fmt.Stringer and the encoding.TextMarshaler and .TextUnmarshaler interfaces.
+// Given the name of a (signed or unsigned) integer type T that has constants
+// defined, enumer will create a new self-contained Go source file
+// implementing
 //	func (t T) String() string
-// The file is created in the same package and directory as the package that defines T.
-// It has helpful defaults designed for use with go generate.
+//	func <T>_Parse(string) (T, error)
+//	func (t T) MarshalText() ([]byte, error)
+//	func (t *T) UnmarshalText([]byte) error
+// The file is created in the same package and directory as the package that
+// defines T. It has helpful defaults designed for use with go generate.
 //
-// Stringer works best with constants that are consecutive values such as created using iota,
-// but creates good code regardless. In the future it might also provide custom support for
-// constant sets that are bit patterns.
+// Enumer works best with constants that are consecutive values such as
+// created using iota, but creates good code regardless. In the future it might
+// also provide custom support for constant sets that are bit patterns.
 //
 // For example, given this snippet,
 //
@@ -20,41 +25,44 @@
 //	type Pill int
 //
 //	const (
-//		Placebo Pill = iota
-//		Aspirin
-//		Ibuprofen
-//		Paracetamol
-//		Acetaminophen = Paracetamol
+//		PLACEBO Pill = iota         // "Placebo"
+//		ASPIRIN                     // "Aspirin"
+//		IBUPROFEN                   // "Ibuprofen"
+//		PARACETAMOL                 // "Paracetamol"
+//		ACETAMINOPHEN = Paracetamol // "Acetaminophen"
 //	)
 //
 // running this command
 //
-//	stringer -type=Pill
+//	enumer -type=Pill
 //
-// in the same directory will create the file pill_string.go, in package painkiller,
-// containing a definition of
+// in the same directory will create the file enumer_pill.go, in package
+// painkiller, containing definitions of
 //
 //	func (Pill) String() string
+//	func Pill_Parse(string) (Pill, error)
+//	func (Pill) MarshalText() ([]byte, error)
+//	func (*Pill) UnmarshalText([]byte) error
 //
-// That method will translate the value of a Pill constant to the string representation
-// of the respective constant name, so that the call fmt.Print(painkiller.Aspirin) will
-// print the string "Aspirin".
+// That method will translate the value of a Pill constant to the string
+// representation of the respective constant name, so that the call
+// fmt.Print(painkiller.ASPIRIN) will print the string "Aspirin".
 //
 // Typically this process would be run using go generate, like this:
 //
-//	//go:generate stringer -type=Pill
+//	//go:generate enumer -type=Pill
 //
-// If multiple constants have the same value, the lexically first matching name will
-// be used (in the example, Acetaminophen will print as "Paracetamol").
+// If multiple constants have the same value, the lexically first matching name
+// will be used (in the example, Acetaminophen will print as "Paracetamol").
 //
 // With no arguments, it processes the package in the current directory.
 // Otherwise, the arguments must name a single directory holding a Go package
 // or a set of Go source files that represent a single Go package.
 //
 // The -type flag accepts a comma-separated list of types so a single run can
-// generate methods for multiple types. The default output file is t_string.go,
-// where t is the lower-cased name of the first type listed. It can be overridden
-// with the -output flag.
+// generate methods for multiple types. The default output file is enumer_t.go,
+// where t is the lower-cased name of the first type listed. It can be
+// overridden with the -output flag.
 //
 package main
 
@@ -82,17 +90,17 @@ import (
 
 var (
 	typeNames = flag.String("type", "", "comma-separated list of type names; must be set")
-	noJSON    = flag.Bool("noJSON", false, "if true, json marshaling methods will NOT be included. Default: false")
-	output    = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
+	noMarshal = flag.Bool("noMarshal", false, "if true, marshaling methods will NOT be included. Default: false")
+	output    = flag.String("output", "", "output file name; default srcdir/enumer_<type>.go")
 )
 
 // Usage is a replacement usage function for the flags package.
 func Usage() {
 	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-	fmt.Fprintf(os.Stderr, "\tstringer [flags] -type T [directory]\n")
-	fmt.Fprintf(os.Stderr, "\tstringer [flags[ -type T files... # Must be a single package\n")
+	fmt.Fprintf(os.Stderr, "\tenumer [flags] -type T [directory]\n")
+	fmt.Fprintf(os.Stderr, "\tenumer [flags[ -type T files... # Must be a single package\n")
 	fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	fmt.Fprintf(os.Stderr, "\thttp://godoc.org/golang.org/x/tools/cmd/stringer\n")
+	fmt.Fprintf(os.Stderr, "\thttp://godoc.org/golang.org/x/tools/cmd/enumer\n")
 	fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }
@@ -129,18 +137,15 @@ func main() {
 	}
 
 	// Print the header and package clause.
-	g.Printf("// Code generated by \"stringer %s\"; DO NOT EDIT\n", strings.Join(os.Args[1:], " "))
+	g.Printf("// Code generated by \"enumer %s\"; DO NOT EDIT\n", strings.Join(os.Args[1:], " "))
 	g.Printf("\n")
 	g.Printf("package %s", g.pkg.name)
 	g.Printf("\n")
 	g.Printf("import \"fmt\"\n") // Used by all methods.
-	if !*noJSON {
-		g.Printf("import \"encoding/json\"\n")
-	}
 
 	// Run generate for each type.
 	for _, typeName := range types {
-		g.generate(typeName, !*noJSON)
+		g.generate(typeName, !*noMarshal)
 	}
 
 	// Format the output.
@@ -149,7 +154,7 @@ func main() {
 	// Write to file.
 	outputName := *output
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s_string.go", types[0])
+		baseName := fmt.Sprintf("enumer_%s.go", types[0])
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	err := ioutil.WriteFile(outputName, src, 0644)
@@ -204,7 +209,7 @@ func (g *Generator) parsePackageDir(directory string) {
 	var names []string
 	names = append(names, pkg.GoFiles...)
 	names = append(names, pkg.CgoFiles...)
-	// TODO: Need to think about constants in test files. Maybe write type_string_test.go
+	// TODO: Need to think about constants in test files. Maybe write enumer_type_test.go
 	// in a separate pass? For later.
 	// names = append(names, pkg.TestGoFiles...) // These are also in the "foo" package.
 	names = append(names, pkg.SFiles...)
@@ -241,7 +246,7 @@ func (g *Generator) parsePackage(directory string, names []string, text interfac
 		if !strings.HasSuffix(name, ".go") {
 			continue
 		}
-		parsedFile, err := parser.ParseFile(fs, name, text, 0)
+		parsedFile, err := parser.ParseFile(fs, name, text, parser.ParseComments)
 		if err != nil {
 			log.Fatalf("parsing package: %s: %s", name, err)
 		}
@@ -264,14 +269,23 @@ func (g *Generator) parsePackage(directory string, names []string, text interfac
 // check type-checks the package. The package must be OK to proceed.
 func (pkg *Package) check(fs *token.FileSet, astFiles []*ast.File) {
 	pkg.defs = make(map[*ast.Ident]types.Object)
-	config := types.Config{FakeImportC: true}
+	ignore := func(err error) {} // Keep parsing even if there are errors.
+	config := types.Config{FakeImportC: true, Error: ignore}
 	info := &types.Info{
 		Defs: pkg.defs,
 	}
-	typesPkg, err := config.Check(pkg.dir, fs, astFiles, info)
-	if err != nil {
-		log.Fatalf("checking package: %s", err)
-	}
+	typesPkg, _ := config.Check(pkg.dir, fs, astFiles, info)
+	// Ignore errors in the package because some of the errors might come from
+	// using the Enumer declared functions!
+	//
+	// TODO(aroman) Check the errors more carefully and only ignore the
+	// errors related to Enumer references.  This will be a bit tricky since
+	// there may be multiple calls to enumer in a package, so we need to
+	// ignore ANY *_Parse, .MarshalText, and .UnmarshalText references.
+	//
+	// if err != nil {
+	// 	log.Fatalf("checking package: %s", err)
+	// }
 	pkg.typesPkg = typesPkg
 }
 
@@ -367,7 +381,10 @@ func (g *Generator) format() []byte {
 
 // Value represents a declared constant.
 type Value struct {
-	name string // The name of the constant.
+	name    string // The name of the constant.
+	display string // The display string of the constant, if specified other
+	// than the constant variable name itself.
+
 	// The value is stored as a bit pattern alone. The boolean tells us
 	// whether to interpret it as an int64 or a uint64; the only place
 	// this matters is when sorting.
@@ -430,6 +447,18 @@ func (f *File) genDecl(node ast.Node) bool {
 			// This is not the type we're looking for.
 			continue
 		}
+
+		var display string
+		have_display := false
+		if vspec.Comment != nil {
+			str := strings.TrimSpace(vspec.Comment.Text())
+			N := len(str)
+			if len(str) > 2 && str[0] == '"' && str[N-1] == '"' {
+				display = str[1 : N-1]
+				have_display = true
+			}
+		}
+
 		// We now have a list of names (from one line of source code) all being
 		// declared with the desired type.
 		// Grab their names and actual values and store them in f.values.
@@ -437,6 +466,12 @@ func (f *File) genDecl(node ast.Node) bool {
 			if name.Name == "_" {
 				continue
 			}
+			// Unless there's a comment in the right format, use the constant
+			// identifier as the display string.
+			if !have_display {
+				display = name.Name
+			}
+			// fmt.Printf("Found %s %s = %q [%v]\n", typ, name.Name, display, have_display)
 			// This dance lets the type checker find the values for us. It's a
 			// bit tricky: look up the object declared by the name, find its
 			// types.Const, and extract its value.
@@ -461,10 +496,11 @@ func (f *File) genDecl(node ast.Node) bool {
 				u64 = uint64(i64)
 			}
 			v := Value{
-				name:   name.Name,
-				value:  u64,
-				signed: info&types.IsUnsigned == 0,
-				str:    value.String(),
+				name:    name.Name,
+				display: display,
+				value:   u64,
+				signed:  info&types.IsUnsigned == 0,
+				str:     value.String(),
 			}
 			f.values = append(f.values, v)
 		}
@@ -522,7 +558,7 @@ func (g *Generator) createIndexAndNameDecl(run []Value, typeName string, suffix 
 	b := new(bytes.Buffer)
 	indexes := make([]int, len(run))
 	for i := range run {
-		b.WriteString(run[i].name)
+		b.WriteString(run[i].display)
 		indexes[i] = b.Len()
 	}
 	nameConst := fmt.Sprintf("_%s_name%s = %q", typeName, suffix, b.String())
@@ -541,13 +577,13 @@ func (g *Generator) createIndexAndNameDecl(run []Value, typeName string, suffix 
 
 // declareNameVars declares the concatenated names string representing all the values in the runs.
 func (g *Generator) declareNameVars(runs [][]Value, typeName string, suffix string) {
-	g.Printf("const _%s_name%s = \"", typeName, suffix)
+	var all string
 	for _, run := range runs {
 		for i := range run {
-			g.Printf("%s", run[i].name)
+			all += run[i].display
 		}
 	}
-	g.Printf("\"\n")
+	g.Printf("const _%s_name%s = %q\n", typeName, suffix, all)
 }
 
 // buildOneRun generates the variables and String method for a single run of contiguous values.
@@ -630,8 +666,8 @@ func (g *Generator) buildMap(runs [][]Value, typeName string) {
 	n := 0
 	for _, values := range runs {
 		for _, value := range values {
-			g.Printf("\t%s: _%s_name[%d:%d],\n", &value, typeName, n, n+len(value.name))
-			n += len(value.name)
+			g.Printf("\t%s: _%s_name[%d:%d],\n", &value, typeName, n, n+len(value.display))
+			n += len(value.display)
 		}
 	}
 	g.Printf("}\n\n")
